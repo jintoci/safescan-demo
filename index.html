@@ -8,104 +8,143 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={theme:{extend:{colors:{brand:{600:'#16a34a',700:'#15803d',800:'#166534',900:'#14532d'}}}}}</script>
+<script>
+tailwind.config = {
+  theme: { extend: { colors: { brand: { 600:'#16a34a',700:'#15803d',800:'#166534',900:'#14532d' } } } }
+}
+</script>
 <style>
-*{box-sizing:border-box;}
-body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;background:#f8fafc;}
-@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.6);}50%{box-shadow:0 0 0 12px rgba(239,68,68,0);}}
-@keyframes pulse-yellow{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.5);}50%{box-shadow:0 0 0 10px rgba(250,204,21,0);}}
-.pulse-red{animation:pulse-red 2s infinite;}
-.pulse-yellow{animation:pulse-yellow 3s infinite;}
-@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-.slide-up{animation:slideUp .3s ease-out;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.spin{animation:spin 1s linear infinite;}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; background: #f8fafc; }
+@keyframes pulse-red { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.6);}50%{box-shadow:0 0 0 12px rgba(239,68,68,0);} }
+@keyframes pulse-yellow { 0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.5);}50%{box-shadow:0 0 0 10px rgba(250,204,21,0);} }
+.pulse-red { animation: pulse-red 2s infinite; }
+.pulse-yellow { animation: pulse-yellow 3s infinite; }
+@keyframes slideUp { from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);} }
+.slide-up { animation: slideUp .3s ease-out; }
+@keyframes spin { to{transform:rotate(360deg);} }
+.spin { animation: spin 1s linear infinite; }
 </style>
 </head>
 <body>
 <div id="root"></div>
+
 <script type="text/babel">
-const{useState,useEffect,useRef}=React;
-const STATIONS=[
-  {id:'s1',name:'Assembly Line A',zone:'Production',x:20,y:28,status:'green',last:'45m ago',interval:2},
-  {id:'s2',name:'Packaging Zone B',zone:'Packaging',x:58,y:22,status:'green',last:'1h 30m ago',interval:2},
-  {id:'s3',name:'Forklift Bay',zone:'Warehouse',x:80,y:42,status:'red',last:'28m ago',interval:2},
-  {id:'s4',name:'Hot Processing Room',zone:'Production',x:28,y:65,status:'yellow',last:'2h 32m ago',interval:2},
-  {id:'s5',name:'Receiving Dock',zone:'Warehouse',x:72,y:70,status:'green',last:'1h ago',interval:2},
-  {id:'s6',name:'QC Lab',zone:'Quality Control',x:47,y:78,status:'offline',last:'6h ago',interval:4},
+const { useState, useEffect, useRef } = React;
+
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const STATIONS = [
+  { id:'s1', name:'Assembly Line A',     zone:'Production',      x:20, y:28, status:'green',   last:'45m ago',    interval:2 },
+  { id:'s2', name:'Packaging Zone B',    zone:'Packaging',       x:58, y:22, status:'green',   last:'1h 30m ago', interval:2 },
+  { id:'s3', name:'Forklift Bay',        zone:'Warehouse',       x:80, y:42, status:'red',     last:'28m ago',    interval:2 },
+  { id:'s4', name:'Hot Processing Room', zone:'Production',      x:28, y:65, status:'yellow',  last:'2h 32m ago', interval:2 },
+  { id:'s5', name:'Receiving Dock',      zone:'Warehouse',       x:72, y:70, status:'green',   last:'1h ago',     interval:2 },
+  { id:'s6', name:'QC Lab',             zone:'Quality Control', x:47, y:78, status:'offline', last:'6h ago',     interval:4 },
 ];
-const ALERTS=[
-  {id:'a1',station:'Forklift Bay',severity:'critical',title:'Spill Reported',msg:'Fluid spill near loading dock. Cone not placed. Immediate cleanup required.',time:'28m ago'},
-  {id:'a2',station:'Forklift Bay',severity:'critical',title:'Machine Guard Removed',msg:'Guard panel on conveyor arm removed and not reinstalled. Tagged for maintenance.',time:'30m ago'},
-  {id:'a3',station:'Hot Processing Room',severity:'warning',title:'Overdue Inspection',msg:'Station has not been scanned in 2.5 hours. Next scheduled inspection is overdue.',time:'32m ago'},
-  {id:'a4',station:'QC Lab',severity:'warning',title:'Station Offline',msg:'QC Lab has not been scanned in over 6 hours.',time:'2h ago'},
+
+const ALERTS = [
+  { id:'a1', station:'Forklift Bay',        severity:'critical', title:'Spill Reported',       msg:'Fluid spill near loading dock. Cone not placed. Immediate cleanup required.',                  time:'28m ago' },
+  { id:'a2', station:'Forklift Bay',        severity:'critical', title:'Machine Guard Removed', msg:'Guard panel on conveyor arm removed and not reinstalled. Tagged for maintenance.',             time:'30m ago' },
+  { id:'a3', station:'Hot Processing Room', severity:'warning',  title:'Overdue Inspection',   msg:'Station has not been scanned in 2.5 hours. Next scheduled inspection is overdue.',            time:'32m ago' },
+  { id:'a4', station:'QC Lab',             severity:'warning',  title:'Station Offline',       msg:'QC Lab has not been scanned in over 6 hours.',                                               time:'2h ago'  },
 ];
-const QUESTIONS=[
-  {id:'q1',q:'Any PPE violations? (missing helmet, vest, gloves, or safety footwear)',required:true},
-  {id:'q2',q:'Any blocked walkways or obstructed emergency exits?',required:true},
-  {id:'q3',q:'Any damaged, missing, or bypassed machine guards or safety shields?',required:true},
-  {id:'q4',q:'Any spills, leaks, or slip hazards present?',required:true},
-  {id:'q5',q:'Any missing or inaccessible fire extinguishers or emergency equipment?',required:true},
-  {id:'q6',q:'Any housekeeping issues? (waste, tools not stored correctly)',required:false},
-  {id:'q7',q:'Additional observations or concerns?',required:false,type:'text'},
+
+const QUESTIONS = [
+  { id:'q1', q:'Any PPE violations? (missing helmet, vest, gloves, or safety footwear)',  required:true  },
+  { id:'q2', q:'Any blocked walkways or obstructed emergency exits?',                      required:true  },
+  { id:'q3', q:'Any damaged, missing, or bypassed machine guards or safety shields?',      required:true  },
+  { id:'q4', q:'Any spills, leaks, or slip hazards present?',                             required:true  },
+  { id:'q5', q:'Any missing or inaccessible fire extinguishers or emergency equipment?',  required:true  },
+  { id:'q6', q:'Any housekeeping issues? (waste, tools not stored correctly)',             required:false },
+  { id:'q7', q:'Additional observations or concerns?',                                    required:false, type:'text' },
 ];
-const RECENT=[
-  {station:'Assembly Line A',inspector:'R. Patel',status:'pass',time:'45m ago'},
-  {station:'Forklift Bay',inspector:'D. Leal',status:'fail',time:'28m ago'},
-  {station:'Packaging Zone B',inspector:'R. Patel',status:'pass',time:'1h 30m ago'},
-  {station:'Receiving Dock',inspector:'T. Singh',status:'warning',time:'1h ago'},
+
+const RECENT = [
+  { station:'Assembly Line A',  inspector:'R. Patel', status:'pass',    time:'45m ago'    },
+  { station:'Forklift Bay',     inspector:'D. Leal',  status:'fail',    time:'28m ago'    },
+  { station:'Packaging Zone B', inspector:'R. Patel', status:'pass',    time:'1h 30m ago' },
+  { station:'Receiving Dock',   inspector:'T. Singh', status:'warning', time:'1h ago'     },
 ];
-function statusDot(s,extra=''){
-  const cls={green:'bg-green-500',yellow:'bg-yellow-400',red:'bg-red-500',offline:'bg-gray-400'}[s];
-  const pulse=s==='red'?'pulse-red':s==='yellow'?'pulse-yellow':'';
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function statusDot(s, extra='') {
+  const cls  = {green:'bg-green-500',yellow:'vg-yellow-400',red:'bg-red-500',offline:'bg-gray-400'}[s];
+  const pulse = s==='red'?'pulse-red':s==='yellow'?'pulse-yellow':'';
   return <span className={`inline-block rounded-full ${cls} ${pulse} ${extra}`}/>;
 }
-function statusLabel(s){return{green:'All Clear',yellow:'Needs Attention',red:'Issue Reported',offline:'No Recent Scan'}[s];}
-function statusTextColor(s){return{green:'text-green-600',yellow:'text-yellow-600',red:'text-red-600',offline:'text-gray-500'}[s];}
-function ScanFlow({station,onClose}){
-  const[step,setStep]=useState('identify');
-  const[name,setName]=useState('');
-  const[qi,setQi]=useState(0);
-  const[answers,setAnswers]=useState({});
-  const[submitting,setSubmitting]=useState(false);
-  const[result,setResult]=useState(null);
-  const startTime=useRef(Date.now());
-  const item=QUESTIONS[qi];
-  const ans=answers[item?.id];
-  const progress=((qi+1)/QUESTIONS.length)*100;
-  const canNext=!item?.required||ans?.val;
-  const submit=async()=>{
+function statusLabel(s)     { return {green:'All Clear',yellow:'Needs Attention',red:'Issue Reported',offline:'No Recent Scan'}[s]; }
+function statusTextColor(s) { return {green:'text-green-600',yellow:'text-yellow-600',red:'text-red-600',offline:'text-gray-500'}[s]; }
+
+// ── QR CODE HELPERS ───────────────────────────────────────────────────────────
+function qrUrl(station) {
+  const url = `https://safescan.app/scan/${station.id}`;
+  return `https://chart.googleapis.com/chart?cht=qr&chs=180x180&chld=M|1&chl=${encodeURIComponent(url)}`;
+}
+
+// ── SCAN FLOW — single-page checklist ─────────────────────────────────────────
+function ScanFlow({ station, onClose }) {
+  const [step, setStep]       = useState('identify');
+  const [name, setName]       = useState('');
+  const [answers, setAnswers] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult]   = useState(null);
+  const startTime = useRef(Date.now());
+
+  const answeredCount    = Object.keys(answers).filter(k => answers[k]?.val).length;
+  const answeredRequired = QUESTIONS.filter(q=>q.required).every(q=>answers[q.id]?.val);
+
+  const setAnswer = (id, val, notes='') =>
+    setAnswers(prev => ({ ...prev, [id]: { val, notes: notes ?? prev[id]?.notes ?? '' } }));
+  const setNotes = (id, notes) =>
+    setAnswers(prev => ({ ...prev, [id]: { ...prev[id], notes } }));
+
+  const submit = async () => {
     setSubmitting(true);
-    await new Promise(r=>setTimeout(r,1400));
-    const fails=Object.values(answers).filter(a=>a.val==='yes').length;
-    const status=fails===0?'pass':fails<=1?'warning':'fail';
-    setResult({status,fails,duration:Math.round((Date.now()-startTime.current)/1000)});
+    await new Promise(r => setTimeout(r, 1400));
+    const fails  = Object.values(answers).filter(a=>a.val==='yes').length;
+    const status = fails===0?'pass':fails<=1?'warning':'fail';
+    setResult({ status, fails, duration: Math.round((Date.now()-startTime.current)/1000) });
     setSubmitting(false);
     setStep('done');
   };
-  const next=()=>{if(qi<QUESTIONS.length-1)setQi(qi+1);else submit();};
-  if(step==='identify')return(
+
+  // ── Identify ──────────────────────────────────────────────────────────────
+  if (step==='identify') return (
     <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col slide-up" style={{maxWidth:480,margin:'0 auto'}}>
       <div className="bg-green-800 px-5 py-4 flex items-center gap-3">
         <button onClick={onClose} className="text-green-300 hover:text-white mr-1 text-lg">←</button>
-        <div><p className="text-green-300 text-xs font-semibold uppercase tracking-wider">SafeScan · Employee View</p><h1 className="text-white font-bold text-lg">{station.name}</h1></div>
+        <div>
+          <p className="text-green-300 text-xs font-semibold uppercase tracking-wider">SafeScan · Employee View</p>
+          <h1 className="text-white font-bold text-lg">{station.name}</h1>
+        </div>
       </div>
       <div className="flex-1 p-6 flex flex-col">
         <div className="bg-slate-800 rounded-2xl p-4 mb-6 border border-slate-700">
           <p className="text-slate-400 text-xs uppercase tracking-wider mb-1">Zone</p>
           <p className="text-white font-semibold">{station.zone}</p>
-          <p className="text-slate-400 text-sm mt-1">Scan every {station.interval} hours · 7 questions</p>
+          <p className="text-slate-400 text-sm mt-1">Scan every {station.interval} hours · {QUESTIONS.length} questions</p>
         </div>
         <h2 className="text-white text-xl font-bold mb-1">Start Inspection</h2>
         <p className="text-slate-400 text-sm mb-6">Enter your name to begin the Standard Safety Walkaround.</p>
         <label className="text-slate-300 text-sm font-medium mb-2 block">Your Name</label>
-        <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. R. Patel" onKeyDown={e=>e.key==='Enter'&&name.trim()&&setStep('checklist')} className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-4 py-3 text-base outline-none focus:border-green-500 placeholder-slate-500 mb-2"/>
-        <p className="text-slate-500 text-xs mb-8">7 questions · Est. 2-3 minutes</p>
-        <button disabled={!name.trim()} onClick={()=>setStep('checklist')} className="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-4 rounded-xl text-base transition-colors">Begin Inspection →</button>
+        <input
+          type="text" value={name} onChange={e=>setName(e.target.value)}
+          placeholder="e.g. R. Patel"
+          onKeyDown={e=>e.key==='Enter'&&name.trim()&&setStep('checklist')}
+          className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-4 py-3 text-base outline-none focus:border-green-500 placeholder-slate-500 mb-2"
+        />
+        <p className="text-slate-500 text-xs mb-8">{QUESTIONS.length} questions · Est. 2–3 minutes</p>
+        <button
+          disabled={!name.trim()}
+          onClick={()=>setStep('checklist')}
+          className="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-4 rounded-xl text-base transition-colors"
+        >Begin Inspection →</button>
       </div>
     </div>
   );
-  if(submitting)return(
+
+  // ── Submitting ────────────────────────────────────────────────────────────
+  if (submitting) return (
     <div className="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center" style={{maxWidth:480,margin:'0 auto'}}>
       <div className="text-center">
         <div className="w-10 h-10 border-4 border-green-400 border-t-transparent rounded-full spin mx-auto mb-4"/>
@@ -114,115 +153,486 @@ function ScanFlow({station,onClose}){
       </div>
     </div>
   );
-  if(step==='done'&&result){
-    const cfg={pass:{icon:'✓',color:'text-green-400',bg:'bg-green-900/30 border-green-600',label:'All Clear',sub:'No issues detected. Inspection logged successfully.'},warning:{icon:'⚠',color:'text-yellow-400',bg:'bg-yellow-900/30 border-yellow-600',label:'Needs Attention',sub:'Minor issue flagged. Your supervisor has been notified.'},fail:{icon:'✗',color:'text-red-400',bg:'bg-red-900/30 border-red-600',label:'Issue Reported',sub:'Critical flag raised. Supervisor alerted immediately.'}}[result.status];
-    return(
+
+  // ── Done ──────────────────────────────────────────────────────────────────
+  if (step==='done' && result) {
+    const cfg = {
+      pass:    { icon:'✓', color:'text-green-400',  bg:'bg-green-900/30 border-green-600',   label:'All Clear',       sub:'No issues detected. Inspection logged successfully.' },
+      warning: { icon:'⚠', color:'text-yellow-400', bg:'bg-yellow-900/30 border-yellow-600', label:'Needs Attention',  sub:'Minor issue flagged. Your supervisor has been notified.' },
+      fail:    { icon:'✗', color:'text-red-400',     bg:'bg-red-900/30 border-red-600',       label:'Issue Reported',   sub:'Critical flag raised. Supervisor alerted immediately.' },
+    }[result.status];
+    return (
       <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col p-6 slide-up" style={{maxWidth:480,margin:'0 auto'}}>
         <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 border-2 ${cfg.bg}`}><span className={`text-4xl font-bold ${cfg.color}`}>{cfg.icon}</span></div>
+          <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 border-2 ${cfg.bg}`}>
+            <span className={`text-4xl font-bold ${cfg.color}`}>{cfg.icon}</span>
+          </div>
           <h1 className={`text-2xl font-bold mb-2 ${cfg.color}`}>{cfg.label}</h1>
           <p className="text-slate-400 text-sm mb-8 max-w-xs">{cfg.sub}</p>
-          <div className="grid grid-cols-3 gap-3 w-full max-w-xs mb-6">{[{l:'Station',v:station.name.split(' ')[0]},{l:'Inspector',v:name.split(' ')[0]},{l:'Duration',v:`${result.duration}s`}].map(s=>(<div key={s.l} className="bg-slate-800 rounded-xl p-3 text-center"><p className="text-white font-bold text-sm">{s.v}</p><p className="text-slate-500 text-xs mt-0.5">{s.l}</p></div>))}</div>
-          {result.fails>0&&(<div className="bg-red-900/20 border border-red-700 rounded-xl p-4 w-full max-w-xs text-left mb-6"><p className="text-red-400 text-sm font-semibold">{result.fails} issue{result.fails>1?'s':''} flagged</p><p className="text-slate-400 text-xs mt-1">Visible on admin dashboard now.</p></div>)}
+          <div className="grid grid-cols-3 gap-3 w-full max-w-xs mb-6">
+            {[{l:'Station',v:station.name.split(' ')[0]},{l:'Inspector',v:name.split(' ')[0]},{l:'Duration',v:`${result.duration}s`}].map(s=>(
+              <div key={s.l} className="bg-slate-800 rounded-xl p-3 text-center">
+                <p className="text-white font-bold text-sm">{s.v}</p>
+                <p className="text-slate-500 text-xs mt-0.5">{s.l}</p>
+              </div>
+            ))}
+          </div>
+          {result.fails>0&&(
+            <div className="bg-red-900/20 border border-red-700 rounded-xl p-4 w-full max-w-xs text-left mb-6">
+              <p className="text-red-400 text-sm font-semibold">{result.fails} issue{result.fails>1?'s':''} flagged</p>
+              <p className="text-slate-400 text-xs mt-1">Visible on admin dashboard now. Supervisor notified.</p>
+            </div>
+          )}
         </div>
-        <button onClick={onClose} className="w-full bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-semibold transition-colors">← Back to Dashboard</button>
+        <button onClick={onClose} className="w-full bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-semibold transition-colors">← Back to Admin Dashboard</button>
       </div>
     );
   }
-  return(
+
+  // ── Single-page checklist ─────────────────────────────────────────────────
+  return (
     <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col slide-up" style={{maxWidth:480,margin:'0 auto'}}>
-      <div className="bg-slate-800 h-1.5"><div className="bg-green-500 h-full transition-all duration-300" style={{width:`${progress}%`}}/></div>
-      <div className="bg-slate-800 px-4 py-3 flex items-center justify-between">
-        <button onClick={()=>qi>0?setQi(qi-1):setStep('identify')} className="text-slate-400 hover:text-white text-sm">← Back</button>
-        <div className="text-center"><p className="text-white text-sm font-semibold">{station.name}</p><p className="text-slate-400 text-xs">{name}</p></div>
-        <span className="text-slate-400 text-sm">{qi+1}/{QUESTIONS.length}</span>
-      </div>
-      <div className="flex-1 p-6 flex flex-col">
-        <div className="flex-1">
-          {item.required&&<span className="inline-block bg-green-900 text-green-300 text-xs font-semibold px-2.5 py-1 rounded-full mb-4">Required</span>}
-          <h2 className="text-white text-xl font-bold leading-snug mb-8">{item.q}</h2>
-          {item.type==='text'?(
-            <textarea value={ans?.val||''} onChange={e=>setAnswers({...answers,[item.id]:{val:e.target.value}})} placeholder="Optional — describe any observations…" rows={4} className="w-full bg-slate-800 border border-slate-600 text-white rounded-xl px-4 py-3 text-sm resize-none outline-none focus:border-green-500 placeholder-slate-500"/>
-          ):(
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {['yes','no'].map(v=>(<button key={v} onClick={()=>setAnswers({...answers,[item.id]:{val:v,notes:''}})} className={`py-5 rounded-2xl font-bold text-xl border-2 transition-all ${ans?.val===v?(v==='yes'?'bg-green-600 border-green-500 text-white scale-105':'bg-red-600 border-red-500 text-white scale-105'):'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500'}`}>{v==='yes'?'✓ Yes':'✗ No'}</button>))}
-            </div>
-          )}
-          {item.type!=='text'&&ans?.val==='yes'&&(
-            <div className="mt-2">
-              <label className="text-red-400 text-sm font-semibold mb-2 block">Describe the issue</label>
-              <textarea value={ans?.notes||''} onChange={e=>setAnswers({...answers,[item.id]:{...ans,notes:e.target.value}})} placeholder="e.g. Guard panel removed from machine #3…" rows={3} className="w-full bg-slate-800 border border-red-700 text-white rounded-xl px-4 py-3 text-sm resize-none outline-none focus:border-red-500 placeholder-slate-500"/>
-            </div>
-          )}
+      {/* Header */}
+      <div className="bg-green-800 px-4 py-3 flex items-center justify-between">
+        <button onClick={()=>setStep('identify')} className="text-green-300 hover:text-white text-sm">← Back</button>
+        <div className="text-center">
+          <p className="text-white text-sm font-semibold">{station.name}</p>
+          <p className="text-green-300 text-xs">{name} · {answeredCount}/{QUESTIONS.length} answered</p>
         </div>
-        <button disabled={!canNext} onClick={next} className="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-4 rounded-xl text-base transition-colors mt-4">{qi<QUESTIONS.length-1?'Next Question →':'Submit Inspection ✓'}</button>
+        <span className="text-green-300 text-xs font-semibold">{lone.zone}</span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="bg-slate-700 h-1.5">
+        <div className="bg-green-500 h-full transition-all duration-300" style={{width:`${(answeredCount/QUESTIONS.length)*100}%`}}/>
+      </div>
+
+      {/* Scrollable questions */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {QUESTIONS.map((item, idx) => {
+          const ans = answers[item.id];
+          const answered = !!ans?.val;
+          const isIssue  = ans?.val==='yes';
+          return (
+            <div key={item.id} className={`rounded-2xl p-4 border-2 transition-all ${answered?(isIssue?'bg-red-950 border-red-600':'bg-green-950 border-green-700'):'bg-slate-800 border-slate-700'}`}>
+              {/* Badge row */}
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-slate-400 text-xs font-mono">Q{idx+1}</span>
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${item.required?'bg-slate-700 text-slate-300':'bg-slate-700 text-slate-500'}`}>
+                  {item.required ? 'Required' : 'Optional'}
+                </span>
+                {answered && (
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isIssue?'bg-red-900 text-red-300':'bg-green-900 text-green-300'}`}>
+                    {isIssue ? '⚠ Issue' : '✓ Clear'}
+                  </span>
+                )}
+              </div>
+
+              {/* Question text */}
+              <p className="text-white text-sm font-semibold leading-snug mb-3">{item.q}</p>
+
+              {/* Input */}
+              {item.type==='text' ? (
+                <textarea
+                  value={ans?.val||''} onChange={e=>setAnswer(item.id, e.target.value)}
+                  placeholder="Optional — describe any observations…" rows={2}
+                  className="w-full bg-slate-700 border border-slate-600 text-white rounded-xl px-3 py-2 text-sm resize-none outline-none focus:border-green-500 placeholder-slate-500"
+                />
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { v:'yes', label:'⚠ Yes — Issue', active:'bg-red-600 border-red-500 text-white' },
+                      { v:'no',  label:'✓ No — Clear',  active:'bg-green-600 border-green-500 text-white' },
+                    ].map(opt=>(
+                      <button key={opt.v}
+                        onClick={()=>setAnswer(item.id, opt.v, ans?.notes||'')}
+                        className={`py-3 rounded-xl font-semibold text-sm border-2 transition-all ${ans?.val===opt.v ? opt.active : 'bg-slate-700 border-slate-600 text-slate-300 hover:border-slate-500'}`}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  {isIssue && (
+                    <div className="mt-3">
+                      <label className="text-red-400 text-xs font-semibold mb-1 block">Describe the issue</label>
+                      <textarea
+                        value={ans?.notes||''} onChange={e=>setNotes(item.id, e.target.value)}
+                        placeholder="e.g. Guard panel removed from machine #3…" rows={2}
+                        className="w-full bg-slate-700 border border-red-700 text-white rounded-xl px-3 py-2 text-sm resize-none outline-none focus:border-red-500 placeholder-slate-500"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+        <div className="h-2"/>
+      </div>
+
+      {/* Submit */}
+      <div className="p-4 bg-slate-900 border-t border-slate-800">
+        <button disabled={!answeredRequired} onClick={submit}
+          className="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-4 rounded-xl text-base transition-colors">
+          Submit Inspection ✓
+        </button>
+        {!answeredRequired && (
+          <p className="text-slate-500 text-xs text-center mt-2">Answer all required questions to submit</p>
+        )}
       </div>
     </div>
   );
 }
-function App(){
-  const[stations,setStations]=useState(STATIONS);
-  const[selected,setSelected]=useState(null);
-  const[tab,setTab]=useState('floorplan');
-  const[scanning,setScanning]=useState(null);
-  const[simRunning,setSimRunning]=useState(false);
-  const[time,setTime]=useState(new Date());
-  useEffect(()=>{const t=setInterval(()=>setTime(new Date()),10000);return()=>clearInterval(t);},[]);
-  const runSim=()=>{
-    if(simRunning)return;
+
+// ── QR CODE VIEW ──────────────────────────────────────────────────────────────
+function QRView({ stations }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h2 className="font-bold text-slate-900 text-sm">Station QR Codes</h2>
+          <p className="text-slate-500 text-xs mt-0.5">Print and mount at each station. Workers scan to open checklist instantly.</p>
+        </div>
+        <button onClick={()=>window.print()} className="text-green-700 hover:text-green-600 text-xs font-semibold bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
+          🖨 Print All
+        </button>
+      </div>
+
+      {/* How it works */}
+      <div className="bg-blue-50 border border-blue-200 rounded-2xl p-3 mb-4">
+        <p className="text-blue-800 text-xs font-semibold mb-1">How QR Scanning Works</p>
+        <div className="flex items-center gap-2 text-blue-700 text-xs">
+          <span className="bg-blue-200 rounded-full w-5 h-5 flex items-center justify-center font-bold flex-shrink-0">1</span>
+          <span>Mount QR code at station</span>
+        </div>
+        <div className="flex items-center gap-2 text-blue-700 text-xs mt-1">
+          <span className="bg-blue-200 rounded-full w-5 h-5 flex items-center justify-center font-bold flex-shrink-0">2</span>
+          <span>Worker scans with phone camera</span>
+        </div>
+        <div className="flex items-center gap-2 text-blue-700 text-xs mt-1">
+          <span className="bg-blue-200 rounded-full w-5 h-5 flex items-center justify-center font-bold flex-shrink-0">3</span>
+          <span>Checklist opens instantly — no app needed</span>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {stations.map(s=>{
+          const dotColor = {green:'bg-green-500',yellow:'bg-yellow-400',red:'bg-red-500',offline:'bg-gray-400'}[s.status];
+          return (
+            <div key={s.id} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex items-center gap-4">
+              {/* QR Code */}
+              <div className="flex-shrink-0 bg-white rounded-xl border border-slate-200 p-1.5">
+                <img
+                  src={qrUrl(s)}
+                  alt={`QR code for ${s.name}`}
+                  width={90} height={90}
+                  className="rounded"
+                />
+              </div>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`w-2.5 h-2.5 rounded-full ${dotColor} flex-shrink-0`}/>
+                  <p className="font-bold text-slate-900 text-sm truncate">{s.name}</p>
+                </div>
+                <p className="text-slate-500 text-xs mb-2">{s.zone} · Every {s.interval}h</p>
+                <div className="bg-slate-50 rounded-lg px-2 py-1">
+                  <p className="text-slate-400 text-xs font-mono truncate">safescan.app/scan/{s.id}</p>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                    {QUESTIONS.filter(q=>q.required).length} required
+                  </span>
+                  <span className="bg-slate-100 text-slate-600 text-xs font-semibold px-2 py-0.5 rounded-full">
+                    {QUESTIONS.length} total
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 bg-slate-50 border border-slate-200 rounded-2xl p-3">
+        <p className="text-slate-600 text-xs font-semibold mb-1">💡 Tec-Tel Hardware Integration</p>
+        <p className="text-slate-500 text-xs">QR labels are pre-printed and installed by Tec-Tel technicians alongside camera and access control hardware — no coordination required from the client.</p>
+      </div>
+    </div>
+  );
+}
+
+// ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
+function App() {
+  const [stations, setStations]   = useState(STATIONS);
+  const [selected, setSelected]   = useState(null);
+  const [tab, setTab]             = useState('floorplan');
+  const [scanning, setScanning]   = useState(null);
+  const [simRunning, setSimRunning] = useState(false);
+  const [time, setTime]           = useState(new Date());
+
+  useEffect(()=>{ const t=setInterval(()=>setTime(new Date()),10000); return()=>clearInterval(t); },[]);
+
+  const runSim = () => {
+    if (simRunning) return;
     setSimRunning(true);
-    const seq=[['green','yellow','red','green','yellow','offline'],['yellow','red','green','yellow','green','red'],['red','green','yellow','offline','red','yellow'],STATIONS.map(s=>s.status)];
+    const seq = [
+      ['green','yellow','red','green','yellow','offline'],
+      ['yellow','red','green','yellow','green','red'],
+      ['red','green','yellow','offline','red','yellow'],
+      STATIONS.map(s=>s.status),
+    ];
     let i=0;
-    const iv=setInterval(()=>{const statuses=seq[i%seq.length];setStations(STATIONS.map((s,idx)=>({...s,status:statuses[idx]})));i++;if(i>=seq.length){clearInterval(iv);setSimRunning(false);setStations(STATIONS);}},700);
+    const iv = setInterval(()=>{
+      const statuses = seq[i%seq.length];
+      setStations(STATIONS.map((s,idx)=>({...s,status:statuses[idx]})));
+      i++;
+      if(i>=seq.length){ clearInterval(iv); setSimRunning(false); setStations(STATIONS); }
+    },700);
   };
-  const green=stations.filter(s=>s.status==='green').length,yellow=stations.filter(s=>s.status==='yellow').length,red=stations.filter(s=>s.status==='red').length,offline=stations.filter(s=>s.status==='offline').length;
-  const compliance=Math.round((green/stations.length)*100);
-  const sel=selected?stations.find(s=>s.id===selected):null;
-  return(
+
+  const green   = stations.filter(s=>s.status==='green').length;
+  const yellow  = stations.filter(s=>s.status==='yellow').length;
+  const red     = stations.filter(s=>s.status==='red').length;
+  const offline = stations.filter(s=>s.status==='offline').length;
+  const compliance = Math.round((green/stations.length)*100);
+  const sel = selected ? stations.find(s=>s.id===selected) : null;
+
+  const TABS = [
+    ['floorplan','Floor Plan'],
+    ['qrcodes','QR Codes'],
+    ['alerts',`Alerts (${ALERTS.length})`],
+    ['activity','Activity'],
+  ];
+
+  return (
     <div style={{maxWidth:480,margin:'0 auto',minHeight:'100vh',display:'flex',flexDirection:'column',position:'relative',background:'#f8fafc'}}>
-      {scanning&&<ScanFlow station={scanning} onClose={()=>setScanning(null)}/>}
+      {scanning && <ScanFlow station={scanning} onClose={()=>setScanning(null)} />}
+
+      {/* Header */}
       <header className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
           <div className="bg-green-700 p-2 rounded-xl"><span className="text-green-300 font-bold text-sm">SS</span></div>
-          <div><h1 className="font-bold text-sm leading-tight">SafeScan</h1><p className="text-slate-400 text-xs">Treehouse Ontario · Admin</p></div>
+          <div>
+            <h1 className="font-bold text-sm leading-tight">SafeScan</h1>
+            <p className="text-slate-400 text-xs">Treehouse Ontario · Admin</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={runSim} title="Run simulation" className={`text-slate-400 hover:text-green-400 transition-colors ${simRunning?'text-green-400':''}`}>
-            <svg className={`w-5 h-5 ${simRunning?'spin':''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <button onClick={runSim} title="Run simulation"
+            className={`text-slate-400 hover:text-green-400 transition-colors ${simRunning?'text-green-400':''}`}>
+            <svg className={`w-5 h-5 ${simRunning?'spin':''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
           </button>
           <div className="relative">
-            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
             {red+yellow>0&&<span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">{red+yellow}</span>}
           </div>
         </div>
       </header>
+
+      {/* Metrics */}
       <div className="bg-white border-b border-slate-200 px-4 py-3">
-        <div className="grid grid-cols-4 gap-2 mb-3">{[{l:'Green',v:green,c:'text-green-600',bg:'bg-green-50'},{l:'Warning',v:yellow,c:'text-yellow-600',bg:'bg-yellow-50'},{l:'Issues',v:red,c:'text-red-600',bg:'bg-red-50'},{l:'Offline',v:offline,c:'text-slate-500',bg:'bg-slate-50'}].map(m=>(<div key={m.l} className={`${m.bg} rounded-xl px-2 py-2 text-center`}><p className={`text-2xl font-black leading-none ${m.c}`}>{m.v}</p><p className="text-slate-500 text-xs mt-1">{m.l}</p></div>))}</div>
-        <div><div className="flex justify-between mb-1"><span className="text-xs text-slate-500">Today's Compliance</span><span className="text-xs font-bold text-slate-700">{compliance}%</span></div><div className="h-1.5 bg-slate-200 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-500 ${compliance>=80?'bg-green-500':compliance>=60?'bg-yellow-400':'bg-red-500'}`} style={{width:`${compliance}%`}}/></div></div>
+        <div className="grid grid-cols-4 gap-2 mb-3">
+          {[
+            {l:'Green',  v:green,   c:'text-green-600',  bg:'bg-green-50'},
+            {l:'Warning',v:yellow,  c:'text-yellow-600', bg:'bg-yellow-50'},
+            {l:'Issues', v:red,     c:'text-red-600',    bg:'bg-red-50'},
+            {l:'Offline',v:offline, c:'text-slate-500',  bg:'bg-slate-50'},
+          ].map(m=>(
+            <div key={m.l} className={`${m.bg} rounded-xl px-2 py-2 text-center`}>
+              <p className={`text-2xl font-black leading-none ${m.c}`}>{m.v}</p>
+              <p className="text-slate-500 text-xs mt-1">{m.l}</p>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="text-xs text-slate-500">Today's Compliance</span>
+            <span className="text-xs font-bold text-slate-700">{compliance}%</span>
+          </div>
+          <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <div className={`h-full rounded-full transition-all duration-500 ${compliance>=80?'bg-green-500':compliance>=60?'bg-yellow-400':'bg-red-500'}`} style={{width:`${compliance}%`}}/>
+          </div>
+        </div>
       </div>
-      <div className="bg-white border-b border-slate-200 flex">{[['floorplan','Floor Plan'],['alerts',`Alerts (${ALERTS.length})`],['activity','Activity']].map(([id,label])=>(<button key={id} onClick={()=>setTab(id)} className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors ${tab===id?'text-green-700 border-green-600':'text-slate-500 border-transparent hover:text-slate-700'}`}>{label}</button>))}</div>
+
+      {/* Tabs */}
+      <div className="bg-white border-b border-slate-200 flex overflow-x-auto">
+        {TABS.map(([id,label])=>(
+          <button key={id} onClick={()=>setTab(id)}
+            className={`flex-shrink-0 px-3 py-3 text-xs font-semibold border-b-2 transition-colors whitespace-nowrap ${tab===id?'text-green-700 border-green-600':'text-slate-500 border-transparent hover:text-slate-700'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
       <div className="flex-1 p-4 overflow-y-auto">
-        {tab==='floorplan'&&<>
+
+        {/* FLOOR PLAN */}
+        {tab==='floorplan' && <>
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-4">
-            <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center"><h2 className="font-bold text-slate-900 text-sm">Facility Floor Plan</h2><span className="text-slate-400 text-xs">{time.toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'})}</span></div>
+            <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="font-bold text-slate-900 text-sm">Facility Floor Plan</h2>
+              <span className="text-slate-400 text-xs">{time.toLocaleTimeString('en-CA',{hour:'2-digit',minute:'2-digit'})}</span>
+            </div>
             <div className="relative bg-slate-100 overflow-hidden" style={{paddingBottom:'62%'}}>
               <div className="absolute inset-0 opacity-15" style={{backgroundImage:'linear-gradient(#64748b 1px,transparent 1px),linear-gradient(90deg,#64748b 1px,transparent 1px)',backgroundSize:'20% 20%'}}/>
-              {[{l:'PRODUCTION',x:'24%',y:'8%'},{l:'PACKAGING',x:'58%',y:'8%'},{l:'WAREHOUSE',x:'76%',y:'56%'},{l:'QC',x:'47%',y:'90%'}].map(z=>(<span key={z.l} style={{left:z.x,top:z.y}} className="absolute text-slate-400 text-xs font-bold uppercase tracking-wider -translate-x-1/2 transform">{z.l}</span>))}
-              {stations.map(s=>{const colors={green:'#22c55e',yellow:'#facc15',red:'#ef4444',offline:'#94a3b8'};const isSel=selected===s.id;return(<button key={s.id} onClick={()=>setSelected(isSel?null:s.id)} style={{position:'absolute',left:`${s.x}%`,top:`${s.y}%`,transform:'translate(-50%,-50%)',zIndex:isSel?10:1}} className={`group transition-all duration-200 ${isSel?'scale-125':''}`}>{s.status==='red'&&<span style={{position:'absolute',inset:0,borderRadius:'50%',background:'rgba(239,68,68,.3)',animation:'pulse-red 2s infinite'}}/>}{s.status==='yellow'&&<span style={{position:'absolute',inset:0,borderRadius:'50%',background:'rgba(250,204,21,.25)',animation:'pulse-yellow 3s infinite'}}/>}<div style={{width:40,height:40,borderRadius:'50%',background:colors[s.status],display:'flex',alignItems:'center',justifyContent:'center',border:'3px solid white',boxShadow:`0 4px 12px ${colors[s.status]}60`}}><span className="text-white font-black text-xs">{s.name.charAt(0)}</span></div></button>);})}
+              {[{l:'PRODUCTION',x:'24%',y:'8%'},{l:'PACKAGING',x:'58%',y:'8%'},{l:'WAREHOUSE',x:'76%',y:'56%'},{l:'QC',x:'47%',y:'90%'}].map(z=>(
+                <span key={z.l} style={{left:z.x,top:z.y}} className="absolute text-slate-400 text-xs font-bold uppercase tracking-wider -translate-x-1/2 transform">{z.l}</span>
+              ))}
+              {stations.map(s=>{
+                const colors={green:'#22c55e',yellow:'#facc15',red:'#ef4444',offline:'#94a3b8'};
+                const isSel=selected===s.id;
+                return (
+                  <button key={s.id} onClick={()=>setSelected(isSel?null:s.id)}
+                    style={{position:'absolute',left:`${s.x}%`,top:`${s.y}%`,transform:'translate(-50%,-50%)',zIndex:isSel?10:1}}
+                    className={`group transition-all duration-200 ${isSel?'scale-125':''}`}>
+                    {s.status==='red'&&<span style={{position:'absolute',inset:0,borderRadius:'50%',background:'rgba(239,68,68,.3)',animation:'pulse-red 2s infinite'}}/>}
+                    {s.status==='yellow'&&<span style={{position:'absolute',inset:0,borderRadius:'50%',background:'rgba(250,204,21,.25)',animation:'pulse-yellow 3s infinite'}}/>}
+                    <div style={{width:40,height:40,borderRadius:'50%',background:colors[s.status],display:'flex',alignItems:'center',justifyContent:'center',border:'3px solid white',boxShadow:`0 4px 12px ${colors[s.status]}60`}}>
+                      <span className="text-white font-black text-xs">{s.name.charAt(0)}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <div className="flex gap-3 mb-4">{[{c:'bg-green-500',l:'Clear'},{c:'bg-yellow-400',l:'Warning'},{c:'bg-red-500',l:'Issue'},{c:'bg-gray-400',l:'Offline'}].map(i=>(<div key={i.l} className="flex items-center gap-1.5"><span className={`w-2.5 h-2.5 rounded-full ${i.c}`}/><span className="text-slate-500 text-xs">{i.l}</span></div>))}</div>
-          {sel&&(<div className={`bg-white rounded-2xl border-2 shadow-lg p-4 mb-4 slide-up ${{green:'border-green-400',yellow:'border-yellow-400',red:'border-red-500',offline:'border-gray-300'}[sel.status]}`}><div className="flex justify-between items-start mb-3"><div><h3 className="font-bold text-slate-900 text-base">{sel.name}</h3><p className="text-slate-500 text-sm">{sel.zone}</p></div><div className={`flex items-center gap-1.5 ${statusTextColor(sel.status)}`}>{statusDot(sel.status,'w-2.5 h-2.5')}<span className="text-sm font-semibold">{statusLabel(sel.status)}</span></div></div><div className="grid grid-cols-2 gap-3 mb-4"><div className="bg-slate-50 rounded-xl p-3"><p className="text-slate-400 text-xs">Last Scan</p><p className="font-semibold text-slate-800 text-sm mt-0.5">{sel.last}</p></div><div className="bg-slate-50 rounded-xl p-3"><p className="text-slate-400 text-xs">Interval</p><p className="font-semibold text-slate-800 text-sm mt-0.5">Every {sel.interval}h</p></div></div><div className="flex gap-2"><button onClick={()=>setScanning(sel)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-semibold py-3 rounded-xl text-sm transition-colors">▶ Simulate Scan</button><button onClick={()=>setSelected(null)} className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm transition-colors">✕</button></div></div>)}
-          <div className="space-y-2">{stations.map(s=>(<button key={s.id} onClick={()=>setSelected(s.id===selected?null:s.id)} className={`w-full bg-white rounded-xl border p-3 flex items-center gap-3 text-left hover:shadow-sm transition-all ${selected===s.id?'border-green-500 shadow-sm':'border-slate-200'}`}>{statusDot(s.status,'w-3 h-3 flex-shrink-0')}<div className="flex-1 min-w-0"><p className="font-semibold text-slate-900 text-sm truncate">{s.name}</p><p className="text-slate-500 text-xs">{s.zone} · {s.last}</p></div><button onClick={e=>{e.stopPropagation();setScanning(s);}} className="text-green-600 hover:text-green-500 text-xs font-semibold bg-green-50 px-2.5 py-1.5 rounded-lg">Scan</button></button>))}</div>
+
+          <div className="flex gap-3 mb-4">
+            {[{c:'bg-green-500',l:'Clear'},{c:'bg-yellow-400',l:'Warning'},{c:'bg-red-500',l:'Issue'},{c:'bg-gray-400',l:'Offline'}].map(i=>(
+              <div key={i.l} className="flex items-center gap-1.5">
+                <span className={`w-2.5 h-2.5 rounded-full ${i.c}`}/>
+                <span className="text-slate-500 text-xs">{i.l}</span>
+              </div>
+            ))}
+          </div>
+
+          {sel&&(
+            <div className={`bg-white rounded-2xl border-2 shadow-lg p-4 mb-4 slide-up ${{green:'border-green-400',yellow:'border-yellow-400',red:'border-red-500',offline:'border-gray-300'}[sel.status]}`}>
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">{sel.name}</h3>
+                  <p className="text-slate-500 text-sm">{sel.zone}</p>
+                </div>
+                <div className={`flex items-center gap-1.5 ${statusTextColor(sel.status)}`}>
+                  {statusDot(sel.status,'w-2.5 h-2.5')}
+                  <span className="text-sm font-semibold">{statusLabel(sel.status)}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="bg-slate-50 rounded-xl p-3"><p className="text-slate-400 text-xs">Last Scan</p><p className="font-semibold text-slate-800 text-sm mt-0.5">{sel.last}</p></div>
+                <div className="bg-slate-50 rounded-xl p-3"><p className="text-slate-400 text-xs">Interval</p><p className="font-semibold text-slate-800 text-sm mt-0.5">Every {sel.interval}h</p></div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={()=>setScanning(sel)} className="flex-1 bg-green-600 hover:bg-green-500 text-white font-semibold py-3 rounded-xl text-sm transition-colors">▶ Simulate Scan</button>
+                <button onClick={()=>setTab('qrcodes')} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl text-sm transition-colors">📷 View QR</button>
+                <button onClick={()=>setSelected(null)} className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-sm transition-colors">✕</button>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {stations.map(s=>(
+              <button key={s.id} onClick={()=>setSelected(s.id===selected?null:s.id)}
+                className={`w-full bg-white rounded-xl border p-3 flex items-center gap-3 text-left hover:shadow-sm transition-all ${selected===s.id?'border-green-500 shadow-sm':'border-slate-200'}`}>
+                {statusDot(s.status,'w-3 h-3 flex-shrink-0')}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-900 text-sm truncate">{s.name}</p>
+                  <p className="text-slate-500 text-xs">{s.zone} · {s.last}</p>
+                </div>
+                <button onClick={e=>{e.stopPropagation();setScanning(s);}}
+                  className="text-green-600 hover:text-green-500 text-xs font-semibold bg-green-50 px-2.5 py-1.5 rounded-lg">Scan</button>
+              </button>
+            ))}
+          </div>
         </>}
-        {tab==='alerts'&&(<div className="space-y-3"><p className="text-slate-500 text-xs mb-2">Showing {ALERTS.length} open alerts</p>{ALERTS.map(a=>(<div key={a.id} className={`p-4 rounded-2xl border slide-up ${a.severity==='critical'?'bg-red-50 border-red-200':'bg-yellow-50 border-yellow-200'}`}><div className="flex gap-3"><span className={`text-xl mt-0.5 ${a.severity==='critical'?'text-red-500':'text-yellow-500'}`}>{a.severity==='critical'?'✗':'⚠'}</span><div className="flex-1"><div className="flex justify-between"><p className="font-bold text-slate-900 text-sm">{a.title}</p><span className={`text-xs font-bold px-2 py-0.5 rounded-full ${a.severity==='critical'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}`}>{a.severity}</span></div><p className="text-slate-500 text-xs mt-0.5 mb-2">{a.station} · {a.time}</p><p className="text-slate-700 text-sm">{a.msg}</p></div></div></div>))}</div>)}
-        {tab==='activity'&&<><div className="grid grid-cols-2 gap-3 mb-4">{[{l:'Inspections Today',v:'14',sub:'↑ On track',c:'text-green-600'},{l:'Compliance Rate',v:'78%',sub:'↓ Below 80% target',c:'text-yellow-600'},{l:'Open Alerts',v:'4',sub:'2 critical',c:'text-red-600'},{l:'Avg. Scan Time',v:'94s',sub:'Within target',c:'text-green-600'}].map(s=>(<div key={s.l} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm"><p className="text-slate-400 text-xs mb-1">{s.l}</p><p className="text-2xl font-black text-slate-900">{s.v}</p><p className={`text-xs mt-1 font-medium ${s.c}`}>{s.sub}</p></div>))}</div><div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"><div className="px-4 py-3 border-b border-slate-100"><h2 className="font-bold text-slate-900 text-sm">Recent Inspections</h2></div><div className="divide-y divide-slate-100">{RECENT.map((r,i)=>(<div key={i} className="px-4 py-3 flex items-center gap-3"><span className={`text-base ${r.status==='pass'?'text-green-500':r.status==='warning'?'text-yellow-500':'text-red-500'}`}>{r.status==='pass'?'✓':r.status==='warning'?'⚠':'✗'}</span><div className="flex-1 min-w-0"><p className="text-sm font-semibold text-slate-900 truncate">{r.station}</p><p className="text-xs text-slate-500">{r.inspector} · {r.time}</p></div><span className={`text-xs font-bold px-2 py-1 rounded-full ${r.status==='pass'?'bg-green-100 text-green-700':r.status==='warning'?'bg-yellow-100 text-yellow-700':'bg-red-100 text-red-700'}`}>{r.status==='pass'?'Pass':r.status==='warning'?'Warning':'Fail'}</span></div>))}</div></div></>}
+
+        {/* QR CODES */}
+        {tab==='qrcodes' && <QRView stations={stations}/>}
+
+        {/* ALERTS */}
+        {tab==='alerts' && (
+          <div className="space-y-3">
+            <p className="text-slate-500 text-xs mb-2">Showing {ALERTS.length} open alerts</p>
+            {ALERTS.map(a=>(
+              <div key={a.id} className={`p-4 rounded-2xl border slide-up ${a.severity==='critical'?'bg-red-50 border-red-200':'bg-yellow-50 border-yellow-200'}`}>
+                <div className="flex gap-3">
+                  <span className={`text-xl mt-0.5 ${a.severity==='critical'?'text-red-500':'text-yellow-500'}`}>{a.severity==='critical'?'✗':'⚠'}</span>
+                  <div className="flex-1">
+                    <div className="flex justify-between">
+                      <p className="font-bold text-slate-900 text-sm">{a.title}</p>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${a.severity==='critical'?'bg-red-100 text-red-700':'bg-yellow-100 text-yellow-700'}`}>{a.severity}</span>
+                    </div>
+                    <p className="text-slate-500 text-xs mt-0.5 mb-2">{a.station} · {a.time}</p>
+                    <p className="text-slate-700 text-sm">{a.msg}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ACTIVITY */}
+        {tab==='activity' && <>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            {[
+              {l:'Inspections Today', v:'14', sub:'↑ On track',         c:'text-green-600'},
+              {l:'Compliance Rate',   v:'78%',sub:'↓ Below 80% target', c:'text-yellow-600'},
+              {l:'Open Alerts',       v:'4',  sub:'2 critical',          c:'text-red-600'},
+              {l:'Avg. Scan Time',    v:'94s',sub:'Within target',       c:'text-green-600'},
+            ].map(s=>(
+              <div key={s.l} className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+                <p className="text-slate-400 text-xs mb-1">{s.l}</p>
+                <p className="text-2xl font-black text-slate-900">{s.v}</p>
+                <p className={`text-xs mt-1 font-medium ${s.c}`}>{s.sub}</p>
+              </div>
+            ))}
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-100">
+              <h2 className="font-bold text-slate-900 text-sm">Recent Inspections</h2>
+            </div>
+            <div className="divide-y divide-slate-100">
+              {RECENT.map((r,i)=>(
+                <div key={i} className="px-4 py-3 flex items-center gap-3">
+                  <span className={`text-base ${r.status==='pass'?'text-green-500':r.status==='warning'?'text-yellow-500':'text-red-500'}`}>{r.status==='pass'?'✓':r.status==='warning'?'⚠':'✗'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 truncate">{r.station}</p>
+                    <p className="text-xs text-slate-500">{r.inspector} · {r.time}</p>
+                  </div>
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${r.status==='pass'?'bg-green-100 text-green-700':r.status==='warning'?'bg-yellow-100 text-yellow-700':'bg-red-100 text-red-700'}`}>
+                    {r.status==='pass'?'Pass':r.status==='warning'?'Warning':'Fail'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>}
       </div>
-      {simRunning&&(<div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full text-sm font-medium shadow-xl slide-up">Simulating floor activity…</div>)}
-      <nav className="bg-white border-t border-slate-200 px-6 py-2 flex justify-around">{[{icon:'🛡',l:'Dashboard',a:true},{icon:'📊',l:'Reports',a:false},{icon:'📍',l:'Stations',a:false},{icon:'⚙️',l:'Settings',a:false}].map(n=>(<button key={n.l} className={`flex flex-col items-center gap-1 py-1 px-3 ${n.a?'text-green-700':'text-slate-400 hover:text-slate-600'}`}><span className="text-lg">{n.icon}</span><span className="text-xs font-semibold">{n.l}</span></button>))}</nav>
+
+      {simRunning&&(
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full text-sm font-medium shadow-xl slide-up">
+          Simulating floor activity…
+        </div>
+      )}
+
+      {/* Bottom nav */}
+      <nav className="bg-white border-t border-slate-200 px-6 py-2 flex justify-around">
+        {[{icon:'🛡',l:'Dashboard',a:true},{icon:'📊',l:'Reports',a:false},{icon:'📍',l:'Stations',a:false},{icon:'⚙️',l:'Settings',a:false}].map(n=>(
+          <button key={n.l} className={`flex flex-col items-center gap-1 py-1 px-3 ${n.a?'text-green-700':'text-slate-400 hover:text-slate-600'}`}>
+            <span className="text-lg">{n.icon}</span>
+            <span className="text-xs font-semibold">{n.l}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
+
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
